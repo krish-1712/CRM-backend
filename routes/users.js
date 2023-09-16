@@ -14,8 +14,8 @@ const shortid = require('shortid');
 const validUrl = require('valid-url');
 
 
-
 mongoose.connect(dbUrl)
+  .then(() => console.log('Connected!'));
 
 
 router.get('/', async function (req, res) {
@@ -97,11 +97,11 @@ router.post('/login', async (req, res) => {
   try {
     let user = await userModel.findOne({ email: req.body.email });
     if (user) {
-      // Verify the password
+
       if (await hashCompare(req.body.password, user.password)) {
-        // Check if the user's role is allowed to log in
+
         if (user.role === 'Employee' || user.role === 'Admin' || user.role === 'Manager') {
-          // Create the Token
+        
           let token = await createToken({
             firstname: user.firstname,
             lastname: user.lastname,
@@ -195,17 +195,11 @@ router.delete('/:id', async (req, res) => {
 })
 
 
-
-
-
-
-//contact
-
 router.post('/contact/create', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    const decodedToken = jwt.decode(token); // Decode the token
-    const role = decodedToken.role; // Access the role from the decoded token
+    const decodedToken = jwt.decode(token); 
+    const role = decodedToken.role; 
 
     if (role !== 'Admin' && role !== 'Manager') {
       return res.status(403).send({
@@ -213,7 +207,7 @@ router.post('/contact/create', async (req, res) => {
       });
     }
 
-    const userId = req.body.userId; // Access the userId from the request body
+    const userId = req.body.userId; 
     console.log('User ID:', userId);
 
     let contact = await contactModel.findOne({ name: req.body.name });
@@ -221,7 +215,7 @@ router.post('/contact/create', async (req, res) => {
 
     if (!contact) {
       let newContact = await contactModel.create({
-        userId: userId, // Set the user associated with the contact
+        userId: userId, 
         name: req.body.name,
         email: req.body.email,
         phonenumber: req.body.phonenumber
@@ -318,19 +312,18 @@ router.delete('/contact/:id', async (req, res) => {
 })
 
 
-//Service Request
+
 router.post('/service/create', async (req, res) => {
   console.log(req.body);
 
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    const decodedToken = jwt.decode(token); // Decode the token
-    const userId = decodedToken.userId; // Access the userId from the decoded token
-    const role = decodedToken.role; // Access the role from the decoded token
+    const decodedToken = jwt.decode(token); 
+    const userId = decodedToken.userId; 
+    const role = decodedToken.role; 
     console.log('User ID:', userId);
     console.log('Role:', role);
 
-    // Check if the user has the required role (Admin or Manager) to create a service
     if (role !== 'Admin' && role !== 'Manager') {
       return res.status(403).send({
         message: 'Unauthorized Access'
@@ -338,14 +331,12 @@ router.post('/service/create', async (req, res) => {
     }
 
 
-    // Verify the user ID or perform any necessary validation
-
     let serviceUser = await ServiceModel.findOne({ name: req.body.name });
     console.log("Service User:", serviceUser);
 
     if (!serviceUser) {
       let service = await ServiceModel.create({
-        userId: req.body.userId, // Set the user associated with the service
+        userId: req.body.userId,
         name: req.body.name,
         description: req.body.description,
         status: req.body.status
@@ -554,7 +545,7 @@ router.post('/password', async (req, res) => {
 })
 
 
-//Generate url
+
 router.post("/url", async (req, res) => {
   console.log("id : " + req.body.id);
   if (req.body.id) {
@@ -568,33 +559,33 @@ router.post("/url", async (req, res) => {
   return res.status(404).send({ message: 'URL not found' });
 });
 
-//url shortern
+
 router.post('/shorten', async (req, res) => {
   const { originalURL } = req.body;
 
-  // Validate the original URL
+
   if (!validUrl.isUri(originalURL)) {
     return res.status(400).json({ message: 'Invalid original URL' });
   }
 
   try {
-    // Check if the original URL already exists in the database
+
     const existingURL = await urlModel.findOne({ originalURL });
     if (existingURL) {
       return res.json({ shortenedURL: existingURL.shortenedURL });
     }
 
-    // Generate a unique shortened URL
+   
     const shortenedURL = shortid.generate();
 
-    // Create a new URL document in the database
+
     const newURL = new urlModel({
       originalURL,
       shortenedURL,
     });
     await newURL.save();
 
-    // Return the shortened URL
+
     res.json({ shortenedURL });
   } catch (error) {
     console.error(error);
@@ -607,7 +598,7 @@ router.post('/shorten', async (req, res) => {
 router.get('/:id/count', async (req, res) => {
   try {
     const token = req.headers['authorization'].split(' ')[1];
-    // console.log('Token:', token);
+
 
     const decodedToken = jwt.verify(token, process.env.secretkey);
     if (!decodedToken) {
@@ -616,13 +607,12 @@ router.get('/:id/count', async (req, res) => {
 
     const id = req.params.id;
 
-    // Get the total count of service requests
+
     const serviceRequestCount = await ServiceModel.countDocuments({ userId: id });
 
-    // Get the total count of contacts
+
     const contactCount = await contactModel.countDocuments({ userId: id });
 
-    // Send the counts as a response
     res.status(200).send({
       serviceRequestCount,
       contactCount,
